@@ -34,6 +34,14 @@ const g: number = 9.81;
 //   vx: number;
 //   vy: number;
 // }
+
+class Game {
+  score: number;
+  constructor() {
+    this.score = 0;
+  }
+}
+
 class GameObject {
   context: any;
   x: number;
@@ -93,6 +101,7 @@ class Player extends GameObject {
     // this.y += this.vy;
   }
 }
+
 class Token extends GameObject {
   width: number;
   height: number;
@@ -120,10 +129,34 @@ class Token extends GameObject {
     );
   }
 
-  update(secondsPassed: number) {
-    if (moveRandomly(1000) <= 1) {
-      this.x = moveRandomly(canvasWidth);
-      this.y = moveRandomly(canvasHeight);
+  update(player: Player) {
+    let speed = 0.05;
+
+    if (player.x > this.x && this.x >= 0) {
+      this.x -= speed;
+    }
+    if (player.x < this.x && this.x + this.width <= canvasWidth) {
+      this.x += speed;
+    }
+    if (player.y < this.y && this.y + this.height <= canvasHeight) {
+      this.y += speed;
+    }
+    if (player.y > this.y && this.y >= 0) {
+      this.y -= speed;
+    }
+
+    this.moveToken(false);
+  }
+
+  moveToken(moveNow: boolean) {
+    if (moveNow) {
+      this.x = moveRandomly(canvasWidth - this.width);
+      this.y = moveRandomly(canvasHeight - this.height);
+    } else {
+      if (moveRandomly(1000) <= 1) {
+        this.x = moveRandomly(canvasWidth - this.width);
+        this.y = moveRandomly(canvasHeight - this.height);
+      }
     }
   }
 }
@@ -135,7 +168,7 @@ class Square extends GameObject {
     super(context, x, y, vx, vy);
 
     // Set default width and height
-    this.width = Math.floor(Math.random() * (50 - 20 + 1) + 10);
+    this.width = Math.floor(Math.random() * 50 + 1);
     this.height = this.width;
   }
 
@@ -158,39 +191,116 @@ class Square extends GameObject {
   update(secondsPassed: number) {
     // Apply acceleration
     // this.vy += g * secondsPassed;
-
-    // Move with set velocity
-    if (player.y - player.speed > 0) {
-      player.vy -= player.speed;
-    } else if (player.y + player.speed < canvasHeight) {
-      player.vy += player.speed;
-    } else {
-      player.vy = 0;
-    }
-
     this.x += this.vx;
     this.y += this.vy;
   }
+
+  moveToken(moveNow: boolean) {
+    if (moveNow) {
+      this.x = moveRandomly(canvasWidth - this.width);
+      this.y = moveRandomly(canvasHeight - this.height);
+    } else {
+      if (moveRandomly(1000) <= 1) {
+        this.x = moveRandomly(canvasWidth - this.width);
+        this.y = moveRandomly(canvasHeight - this.height);
+      }
+    }
+  }
 }
+
 let player: Player;
 let gameObjects: Square[] = [];
 let token: Token;
+let game: Game;
+
+let lastVertical = "";
+let lastHorizontal = "";
+
+const up = (player: Player) => player.y > 0;
+const left = (player: Player) => player.x > 0;
+const down = (player: Player) => player.y + player.height < canvasHeight;
+const right = (player: Player) => player.x + player.width < canvasWidth;
 
 document.addEventListener("keydown", (e: any) => {
   let key = e.key;
 
-  if (key === "ArrowUp" && player.y > 0) {
-    player.y -= player.speed;
+  console.log(e);
+
+  if (up(player) && key == "ArrowUp") {
+    if (lastHorizontal === "ArrowLeft" && left(player)) {
+      player.y -= player.speed;
+      player.x -= player.speed;
+      lastVertical = "ArrowUp";
+    } else if (lastHorizontal === "ArrowRight" && right(player)) {
+      player.y -= player.speed;
+      player.x += player.speed;
+      lastVertical = "ArrowUp";
+    } else {
+      player.y -= player.speed;
+      lastVertical = "ArrowUp";
+    }
   }
-  if (key === "ArrowDown" && player.y + player.height < canvasHeight) {
-    player.y += player.speed;
+  if (down(player) && key === "ArrowDown") {
+    if (lastHorizontal === "ArrowLeft" && left(player)) {
+      player.y += player.speed;
+      player.x -= player.speed;
+      lastVertical = "ArrowDown";
+    } else if (lastHorizontal === "ArrowRight" && right(player)) {
+      player.y += player.speed;
+      player.x += player.speed;
+      lastVertical = "ArrowDown";
+    } else {
+      player.y += player.speed;
+      lastVertical = "ArrowDown";
+    }
   }
 
-  if (key === "ArrowRight" && player.x + player.width < canvasWidth) {
-    player.x += player.speed;
+  if (left(player) && key === "ArrowLeft") {
+    if (lastVertical === "ArrowUp" && up(player)) {
+      player.y -= player.speed;
+      player.x -= player.speed;
+      lastHorizontal = "ArrowLeft";
+    } else if (lastVertical === "ArrowDown" && down(player)) {
+      player.y += player.speed;
+      player.x -= player.speed;
+      lastHorizontal = "ArrowLeft";
+    } else {
+      player.x -= player.speed;
+      lastHorizontal = "ArrowLeft";
+    }
   }
-  if (key === "ArrowLeft" && player.x > 0) {
-    player.x -= player.speed;
+
+  if (right(player) && key === "ArrowRight") {
+    if (lastVertical === "ArrowUp" && up(player)) {
+      player.y -= player.speed;
+      player.x += player.speed;
+      lastHorizontal = "ArrowRight";
+    } else if (lastVertical === "ArrowDown" && down(player)) {
+      player.y += player.speed;
+      player.x += player.speed;
+      lastHorizontal = "ArrowRight";
+    } else {
+      player.x += player.speed;
+      lastHorizontal = "ArrowRight";
+    }
+  }
+});
+
+document.addEventListener("keyup", (e: any) => {
+  let key = e.key;
+
+  if (key === "ArrowUp") {
+    lastVertical = "";
+  }
+  if (key === "ArrowDown") {
+    lastVertical = "";
+  }
+
+  if (key === "ArrowRight") {
+    lastHorizontal = "";
+  }
+  if (key === "ArrowLeft") {
+    lastHorizontal = "";
   }
 });
 
@@ -202,8 +312,8 @@ function createWorld() {
   for (let i = 0; i < max; i++) {
     let x = 0;
     let y = 0;
-    let xv = Math.floor(Math.random() * (100 - -100 + 1) + 2);
-    let yv = Math.floor(Math.random() * (100 - 10 + 1) + 1);
+    let xv = Math.floor(Math.random() * 1 + 1);
+    let yv = Math.floor(Math.random() * 1 + 1);
 
     gameObjects.push(new Square(context, x, y, xv, yv));
   }
@@ -215,6 +325,7 @@ function createWorld() {
     0,
     0
   );
+  game = new Game();
 }
 
 createWorld();
@@ -233,9 +344,27 @@ function detectCollide(): void {
       token.height
     )
   ) {
-    console.log("LOL");
+    token.moveToken(true);
+    game.score++;
+  }
+  if (
+    rectIntersect(
+      player.x,
+      player.y,
+      player.width,
+      player.height,
+      gameObjects[0].x,
+      gameObjects[0].y,
+      gameObjects[0].width,
+      gameObjects[0].height
+    )
+  ) {
+    gameObjects[0].moveToken(true);
+
+    game.score--;
   }
 }
+
 function init() {
   // Start the first frame request
   window.requestAnimationFrame(gameLoop);
@@ -252,7 +381,7 @@ function gameLoop(timeStamp: number) {
   for (let i = 0; i < gameObjects.length; i++) {
     gameObjects[i].update(secondsPassed);
     player.update(secondsPassed);
-    token.update(secondsPassed);
+    token.update(player);
   }
 
   context.clearRect(0, 0, width, height);
@@ -266,6 +395,8 @@ function gameLoop(timeStamp: number) {
     player.draw();
     token.draw();
   }
+
+  context.fillText("Score: " + (game.score + 1), canvasWidth - 50, 20);
 
   window.requestAnimationFrame(gameLoop);
 }
@@ -346,7 +477,7 @@ function detectCollisions() {
 }
 
 // Set a restitution, a lower value will lose more energy when colliding
-const restitution = 0.9;
+const restitution = 1;
 
 function detectEdgeCollisions() {
   let obj: Square;

@@ -39,6 +39,12 @@ var g = 9.81;
 //   vx: number;
 //   vy: number;
 // }
+var Game = /** @class */ (function () {
+    function Game() {
+        this.score = 0;
+    }
+    return Game;
+}());
 var GameObject = /** @class */ (function () {
     function GameObject(context, x, y, vx, vy) {
         this.context = context;
@@ -97,10 +103,32 @@ var Token = /** @class */ (function (_super) {
         }
         this.context.drawImage(current_img, this.x, this.y, this.width, this.height);
     };
-    Token.prototype.update = function (secondsPassed) {
-        if (moveRandomly(1000) <= 1) {
-            this.x = moveRandomly(canvasWidth);
-            this.y = moveRandomly(canvasHeight);
+    Token.prototype.update = function (player) {
+        var speed = 0.05;
+        if (player.x > this.x && this.x >= 0) {
+            this.x -= speed;
+        }
+        if (player.x < this.x && this.x + this.width <= canvasWidth) {
+            this.x += speed;
+        }
+        if (player.y < this.y && this.y + this.height <= canvasHeight) {
+            this.y += speed;
+        }
+        if (player.y > this.y && this.y >= 0) {
+            this.y -= speed;
+        }
+        this.moveToken(false);
+    };
+    Token.prototype.moveToken = function (moveNow) {
+        if (moveNow) {
+            this.x = moveRandomly(canvasWidth - this.width);
+            this.y = moveRandomly(canvasHeight - this.height);
+        }
+        else {
+            if (moveRandomly(1000) <= 1) {
+                this.x = moveRandomly(canvasWidth - this.width);
+                this.y = moveRandomly(canvasHeight - this.height);
+            }
         }
     };
     return Token;
@@ -110,7 +138,7 @@ var Square = /** @class */ (function (_super) {
     function Square(context, x, y, vx, vy) {
         var _this = _super.call(this, context, x, y, vx, vy) || this;
         // Set default width and height
-        _this.width = Math.floor(Math.random() * (50 - 20 + 1) + 10);
+        _this.width = Math.floor(Math.random() * 50 + 1);
         _this.height = _this.width;
         return _this;
     }
@@ -125,37 +153,114 @@ var Square = /** @class */ (function (_super) {
     Square.prototype.update = function (secondsPassed) {
         // Apply acceleration
         // this.vy += g * secondsPassed;
-        // Move with set velocity
-        if (player.y - player.speed > 0) {
-            player.vy -= player.speed;
-        }
-        else if (player.y + player.speed < canvasHeight) {
-            player.vy += player.speed;
-        }
-        else {
-            player.vy = 0;
-        }
         this.x += this.vx;
         this.y += this.vy;
+    };
+    Square.prototype.moveToken = function (moveNow) {
+        if (moveNow) {
+            this.x = moveRandomly(canvasWidth - this.width);
+            this.y = moveRandomly(canvasHeight - this.height);
+        }
+        else {
+            if (moveRandomly(1000) <= 1) {
+                this.x = moveRandomly(canvasWidth - this.width);
+                this.y = moveRandomly(canvasHeight - this.height);
+            }
+        }
     };
     return Square;
 }(GameObject));
 var player;
 var gameObjects = [];
 var token;
+var game;
+var lastVertical = "";
+var lastHorizontal = "";
+var up = function (player) { return player.y > 0; };
+var left = function (player) { return player.x > 0; };
+var down = function (player) { return player.y + player.height < canvasHeight; };
+var right = function (player) { return player.x + player.width < canvasWidth; };
 document.addEventListener("keydown", function (e) {
     var key = e.key;
-    if (key === "ArrowUp" && player.y > 0) {
-        player.y -= player.speed;
+    console.log(e);
+    if (up(player) && key == "ArrowUp") {
+        if (lastHorizontal === "ArrowLeft" && left(player)) {
+            player.y -= player.speed;
+            player.x -= player.speed;
+            lastVertical = "ArrowUp";
+        }
+        else if (lastHorizontal === "ArrowRight" && right(player)) {
+            player.y -= player.speed;
+            player.x += player.speed;
+            lastVertical = "ArrowUp";
+        }
+        else {
+            player.y -= player.speed;
+            lastVertical = "ArrowUp";
+        }
     }
-    if (key === "ArrowDown" && player.y + player.height < canvasHeight) {
-        player.y += player.speed;
+    if (down(player) && key === "ArrowDown") {
+        if (lastHorizontal === "ArrowLeft" && left(player)) {
+            player.y += player.speed;
+            player.x -= player.speed;
+            lastVertical = "ArrowDown";
+        }
+        else if (lastHorizontal === "ArrowRight" && right(player)) {
+            player.y += player.speed;
+            player.x += player.speed;
+            lastVertical = "ArrowDown";
+        }
+        else {
+            player.y += player.speed;
+            lastVertical = "ArrowDown";
+        }
     }
-    if (key === "ArrowRight" && player.x + player.width < canvasWidth) {
-        player.x += player.speed;
+    if (left(player) && key === "ArrowLeft") {
+        if (lastVertical === "ArrowUp" && up(player)) {
+            player.y -= player.speed;
+            player.x -= player.speed;
+            lastHorizontal = "ArrowLeft";
+        }
+        else if (lastVertical === "ArrowDown" && down(player)) {
+            player.y += player.speed;
+            player.x -= player.speed;
+            lastHorizontal = "ArrowLeft";
+        }
+        else {
+            player.x -= player.speed;
+            lastHorizontal = "ArrowLeft";
+        }
     }
-    if (key === "ArrowLeft" && player.x > 0) {
-        player.x -= player.speed;
+    if (right(player) && key === "ArrowRight") {
+        if (lastVertical === "ArrowUp" && up(player)) {
+            player.y -= player.speed;
+            player.x += player.speed;
+            lastHorizontal = "ArrowRight";
+        }
+        else if (lastVertical === "ArrowDown" && down(player)) {
+            player.y += player.speed;
+            player.x += player.speed;
+            lastHorizontal = "ArrowRight";
+        }
+        else {
+            player.x += player.speed;
+            lastHorizontal = "ArrowRight";
+        }
+    }
+});
+document.addEventListener("keyup", function (e) {
+    var key = e.key;
+    if (key === "ArrowUp") {
+        lastVertical = "";
+    }
+    if (key === "ArrowDown") {
+        lastVertical = "";
+    }
+    if (key === "ArrowRight") {
+        lastHorizontal = "";
+    }
+    if (key === "ArrowLeft") {
+        lastHorizontal = "";
     }
 });
 function createWorld() {
@@ -164,18 +269,24 @@ function createWorld() {
     for (var i = 0; i < max; i++) {
         var x = 0;
         var y = 0;
-        var xv = Math.floor(Math.random() * (100 - -100 + 1) + 2);
-        var yv = Math.floor(Math.random() * (100 - 10 + 1) + 1);
+        var xv = Math.floor(Math.random() * 1 + 1);
+        var yv = Math.floor(Math.random() * 1 + 1);
         gameObjects.push(new Square(context, x, y, xv, yv));
     }
     player = new Player(context, 10, 10, 0, 0);
     token = new Token(context, moveRandomly(canvasWidth), moveRandomly(canvasHeight), 0, 0);
+    game = new Game();
 }
 createWorld();
 window.onload = init;
 function detectCollide() {
     if (rectIntersect(player.x, player.y, player.width, player.height, token.x, token.y, token.width, token.height)) {
-        console.log("LOL");
+        token.moveToken(true);
+        game.score++;
+    }
+    if (rectIntersect(player.x, player.y, player.width, player.height, gameObjects[0].x, gameObjects[0].y, gameObjects[0].width, gameObjects[0].height)) {
+        gameObjects[0].moveToken(true);
+        game.score--;
     }
 }
 function init() {
@@ -191,7 +302,7 @@ function gameLoop(timeStamp) {
     for (var i = 0; i < gameObjects.length; i++) {
         gameObjects[i].update(secondsPassed);
         player.update(secondsPassed);
-        token.update(secondsPassed);
+        token.update(player);
     }
     context.clearRect(0, 0, width, height);
     detectCollisions();
@@ -203,6 +314,7 @@ function gameLoop(timeStamp) {
         player.draw();
         token.draw();
     }
+    context.fillText("Score: " + (game.score + 1), canvasWidth - 50, 20);
     window.requestAnimationFrame(gameLoop);
 }
 function rectIntersect(x1, y1, w1, h1, x2, y2, w2, h2) {
@@ -252,7 +364,7 @@ function detectCollisions() {
     }
 }
 // Set a restitution, a lower value will lose more energy when colliding
-var restitution = 0.9;
+var restitution = 1;
 function detectEdgeCollisions() {
     var obj;
     for (var i = 0; i < gameObjects.length; i++) {
