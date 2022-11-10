@@ -1,6 +1,4 @@
-const startGame = (): void => {};
-
-startGame();
+let startBtn: HTMLButtonElement;
 
 let canvas: HTMLCanvasElement = document.querySelector("canvas");
 let context: CanvasRenderingContext2D = canvas.getContext("2d");
@@ -9,31 +7,36 @@ canvas.classList.add("canvas");
 
 let width: number = 300;
 let height: number = 300 / 2;
-// canvas.style.width = String(width) + "px";
-// canvas.style.height = String(height) + "px";
-
 // Define the edges of the canvas
 const canvasWidth: number = width;
 const canvasHeight: number = height;
 
 // document.body.appendChild(canvas);
 
-let img = document.createElement("img");
-img.setAttribute("src", "david.jpg");
-
-let img2 = document.createElement("img");
-img2.setAttribute("src", "davidCollide.jpg");
+let reverseSear = document.createElement("img");
+reverseSear.setAttribute("src", "reverseSear.jpg");
+let tofu = document.createElement("img");
+tofu.setAttribute("src", "tofu.jpg");
+let playerImg = document.createElement("img");
+playerImg.setAttribute("src", "you.png");
+let playerImgHit = document.createElement("img");
+playerImgHit.setAttribute("src", "youMad.png");
 
 // Set gravitational acceleration
 const g: number = 9.81;
 
-// interface GameObjectInterface {
-//   context: any;
-//   x: number;
-//   y: number;
-//   vx: number;
-//   vy: number;
-// }
+let hasGameEnded = false;
+
+function startGame(): void {
+  startBtn = document.querySelector(".start-game");
+  startBtn.addEventListener("click", function () {
+    if (!startBtn.classList.contains("again")) startBtn.classList.add("again");
+    hasGameEnded = false;
+    init();
+    startBtn.classList.toggle("none");
+  });
+}
+startGame();
 
 class Game {
   score: number;
@@ -79,9 +82,10 @@ class Player extends GameObject {
 
   draw() {
     // Draw a simple square
-    let current_img = img;
+    let current_img = playerImg;
     if (this.isColliding) {
-      current_img = img2;
+      current_img = playerImgHit;
+      console.log("HIT");
     }
 
     this.context.drawImage(
@@ -93,13 +97,7 @@ class Player extends GameObject {
     );
   }
 
-  update(secondsPassed: number) {
-    // if (this.y + this.vy < 0) {
-    //   this.vy = 0;
-    // }
-    // this.x += this.vx;
-    // this.y += this.vy;
-  }
+  update(secondsPassed: number) {}
 }
 
 class Token extends GameObject {
@@ -115,9 +113,9 @@ class Token extends GameObject {
 
   draw() {
     // Draw a simple square
-    let current_img = img;
+    let current_img = reverseSear;
     if (this.isColliding) {
-      current_img = img2;
+      // current_img = img2;
     }
 
     this.context.drawImage(
@@ -168,15 +166,15 @@ class Square extends GameObject {
     super(context, x, y, vx, vy);
 
     // Set default width and height
-    this.width = Math.floor(Math.random() * 50 + 1);
+    this.width = Math.floor(Math.random() * 20 + 10);
     this.height = this.width;
   }
 
   draw() {
     // Draw a simple square
-    let current_img = img;
+    let current_img = tofu;
     if (this.isColliding) {
-      current_img = img2;
+      // current_img = img2;
     }
 
     this.context.drawImage(
@@ -310,10 +308,10 @@ function createWorld() {
   max = 1;
 
   for (let i = 0; i < max; i++) {
-    let x = 0;
-    let y = 0;
-    let xv = Math.floor(Math.random() * 1 + 1);
-    let yv = Math.floor(Math.random() * 1 + 1);
+    let x = 100;
+    let y = 100;
+    let xv = 0.25;
+    let yv = 0.55;
 
     gameObjects.push(new Square(context, x, y, xv, yv));
   }
@@ -329,7 +327,6 @@ function createWorld() {
 }
 
 createWorld();
-window.onload = init;
 
 function detectCollide(): void {
   if (
@@ -360,13 +357,24 @@ function detectCollide(): void {
     )
   ) {
     gameObjects[0].moveToken(true);
-
-    game.score--;
+    player.isColliding = true;
+    setTimeout(() => {
+      player.isColliding = false;
+    }, 500);
+    if (game.score > 0) game.score--;
   }
 }
 
-function init() {
+function endGame(): void {
+  if (game.score > 9) {
+    hasGameEnded = true;
+    startBtn.classList.toggle("none");
+  }
+}
+
+function init(): void {
   // Start the first frame request
+  game.score = 0;
   window.requestAnimationFrame(gameLoop);
 }
 
@@ -377,7 +385,6 @@ function gameLoop(timeStamp: number) {
   secondsPassed = (timeStamp - oldTimeStamp) / 1000;
   oldTimeStamp = timeStamp;
 
-  // Loop over all game objects
   for (let i = 0; i < gameObjects.length; i++) {
     gameObjects[i].update(secondsPassed);
     player.update(secondsPassed);
@@ -396,9 +403,13 @@ function gameLoop(timeStamp: number) {
     token.draw();
   }
 
-  context.fillText("Score: " + (game.score + 1), canvasWidth - 50, 20);
+  context.fillStyle = "#774400";
+  context.fillText("Servings: " + game.score, canvasWidth - 60, 20);
 
-  window.requestAnimationFrame(gameLoop);
+  endGame();
+  if (hasGameEnded === false) {
+    window.requestAnimationFrame(gameLoop);
+  }
 }
 
 function rectIntersect(
@@ -476,8 +487,7 @@ function detectCollisions() {
   }
 }
 
-// Set a restitution, a lower value will lose more energy when colliding
-const restitution = 1;
+// Set a , a lower value will lose more energy when colliding
 
 function detectEdgeCollisions() {
   let obj: Square;
@@ -485,21 +495,18 @@ function detectEdgeCollisions() {
     obj = gameObjects[i];
 
     // Check for left and right
-    if (obj.x < obj.width) {
-      obj.vx = Math.abs(obj.vx) * restitution;
-      obj.x = obj.width;
+    if (obj.x < 0) {
+      obj.vx = 0 - obj.vx;
     } else if (obj.x > canvasWidth - obj.width) {
-      obj.vx = -Math.abs(obj.vx) * restitution;
-      obj.x = canvasWidth - obj.width;
+      obj.vx = 0 - obj.vx;
     }
 
     // Check for bottom and top
-    if (obj.y < obj.height) {
-      obj.vy = Math.abs(obj.vy) * restitution;
-      obj.y = obj.height;
+    if (obj.y < 0) {
+      obj.vy = 0 - obj.vy;
     } else if (obj.y > canvasHeight - obj.height) {
-      obj.vy = -Math.abs(obj.vy) * restitution;
-      obj.y = canvasHeight - obj.height;
+      obj.vy = 0 - obj.vy;
+      // obj.y = canvasHeight - obj.height;
     }
   }
 }

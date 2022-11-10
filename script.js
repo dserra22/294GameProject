@@ -13,32 +13,38 @@ var __extends = (this && this.__extends) || (function () {
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
     };
 })();
-var startGame = function () { };
-startGame();
+var startBtn;
 var canvas = document.querySelector("canvas");
 var context = canvas.getContext("2d");
 canvas.classList.add("canvas");
 var width = 300;
 var height = 300 / 2;
-// canvas.style.width = String(width) + "px";
-// canvas.style.height = String(height) + "px";
 // Define the edges of the canvas
 var canvasWidth = width;
 var canvasHeight = height;
 // document.body.appendChild(canvas);
-var img = document.createElement("img");
-img.setAttribute("src", "david.jpg");
-var img2 = document.createElement("img");
-img2.setAttribute("src", "davidCollide.jpg");
+var reverseSear = document.createElement("img");
+reverseSear.setAttribute("src", "reverseSear.jpg");
+var tofu = document.createElement("img");
+tofu.setAttribute("src", "tofu.jpg");
+var playerImg = document.createElement("img");
+playerImg.setAttribute("src", "you.png");
+var playerImgHit = document.createElement("img");
+playerImgHit.setAttribute("src", "youMad.png");
 // Set gravitational acceleration
 var g = 9.81;
-// interface GameObjectInterface {
-//   context: any;
-//   x: number;
-//   y: number;
-//   vx: number;
-//   vy: number;
-// }
+var hasGameEnded = false;
+function startGame() {
+    startBtn = document.querySelector(".start-game");
+    startBtn.addEventListener("click", function () {
+        if (!startBtn.classList.contains("again"))
+            startBtn.classList.add("again");
+        hasGameEnded = false;
+        init();
+        startBtn.classList.toggle("none");
+    });
+}
+startGame();
 var Game = /** @class */ (function () {
     function Game() {
         this.score = 0;
@@ -71,19 +77,14 @@ var Player = /** @class */ (function (_super) {
     }
     Player.prototype.draw = function () {
         // Draw a simple square
-        var current_img = img;
+        var current_img = playerImg;
         if (this.isColliding) {
-            current_img = img2;
+            current_img = playerImgHit;
+            console.log("HIT");
         }
         this.context.drawImage(current_img, this.x, this.y, this.width, this.height);
     };
-    Player.prototype.update = function (secondsPassed) {
-        // if (this.y + this.vy < 0) {
-        //   this.vy = 0;
-        // }
-        // this.x += this.vx;
-        // this.y += this.vy;
-    };
+    Player.prototype.update = function (secondsPassed) { };
     return Player;
 }(GameObject));
 var Token = /** @class */ (function (_super) {
@@ -97,9 +98,9 @@ var Token = /** @class */ (function (_super) {
     }
     Token.prototype.draw = function () {
         // Draw a simple square
-        var current_img = img;
+        var current_img = reverseSear;
         if (this.isColliding) {
-            current_img = img2;
+            // current_img = img2;
         }
         this.context.drawImage(current_img, this.x, this.y, this.width, this.height);
     };
@@ -138,15 +139,15 @@ var Square = /** @class */ (function (_super) {
     function Square(context, x, y, vx, vy) {
         var _this = _super.call(this, context, x, y, vx, vy) || this;
         // Set default width and height
-        _this.width = Math.floor(Math.random() * 50 + 1);
+        _this.width = Math.floor(Math.random() * 20 + 10);
         _this.height = _this.width;
         return _this;
     }
     Square.prototype.draw = function () {
         // Draw a simple square
-        var current_img = img;
+        var current_img = tofu;
         if (this.isColliding) {
-            current_img = img2;
+            // current_img = img2;
         }
         this.context.drawImage(current_img, this.x, this.y, this.width, this.height);
     };
@@ -267,10 +268,10 @@ function createWorld() {
     var max = Math.floor(Math.random() * (20 - 10 + 1) + 10);
     max = 1;
     for (var i = 0; i < max; i++) {
-        var x = 0;
-        var y = 0;
-        var xv = Math.floor(Math.random() * 1 + 1);
-        var yv = Math.floor(Math.random() * 1 + 1);
+        var x = 100;
+        var y = 100;
+        var xv = 0.25;
+        var yv = 0.55;
         gameObjects.push(new Square(context, x, y, xv, yv));
     }
     player = new Player(context, 10, 10, 0, 0);
@@ -278,7 +279,6 @@ function createWorld() {
     game = new Game();
 }
 createWorld();
-window.onload = init;
 function detectCollide() {
     if (rectIntersect(player.x, player.y, player.width, player.height, token.x, token.y, token.width, token.height)) {
         token.moveToken(true);
@@ -286,11 +286,23 @@ function detectCollide() {
     }
     if (rectIntersect(player.x, player.y, player.width, player.height, gameObjects[0].x, gameObjects[0].y, gameObjects[0].width, gameObjects[0].height)) {
         gameObjects[0].moveToken(true);
-        game.score--;
+        player.isColliding = true;
+        setTimeout(function () {
+            player.isColliding = false;
+        }, 500);
+        if (game.score > 0)
+            game.score--;
+    }
+}
+function endGame() {
+    if (game.score > 9) {
+        hasGameEnded = true;
+        startBtn.classList.toggle("none");
     }
 }
 function init() {
     // Start the first frame request
+    game.score = 0;
     window.requestAnimationFrame(gameLoop);
 }
 var oldTimeStamp = 0;
@@ -298,7 +310,6 @@ var secondsPassed = 0;
 function gameLoop(timeStamp) {
     secondsPassed = (timeStamp - oldTimeStamp) / 1000;
     oldTimeStamp = timeStamp;
-    // Loop over all game objects
     for (var i = 0; i < gameObjects.length; i++) {
         gameObjects[i].update(secondsPassed);
         player.update(secondsPassed);
@@ -314,8 +325,12 @@ function gameLoop(timeStamp) {
         player.draw();
         token.draw();
     }
-    context.fillText("Score: " + (game.score + 1), canvasWidth - 50, 20);
-    window.requestAnimationFrame(gameLoop);
+    context.fillStyle = "#774400";
+    context.fillText("Servings: " + game.score, canvasWidth - 60, 20);
+    endGame();
+    if (hasGameEnded === false) {
+        window.requestAnimationFrame(gameLoop);
+    }
 }
 function rectIntersect(x1, y1, w1, h1, x2, y2, w2, h2) {
     // Check x and y for overlap
@@ -363,29 +378,25 @@ function detectCollisions() {
         }
     }
 }
-// Set a restitution, a lower value will lose more energy when colliding
-var restitution = 1;
+// Set a , a lower value will lose more energy when colliding
 function detectEdgeCollisions() {
     var obj;
     for (var i = 0; i < gameObjects.length; i++) {
         obj = gameObjects[i];
         // Check for left and right
-        if (obj.x < obj.width) {
-            obj.vx = Math.abs(obj.vx) * restitution;
-            obj.x = obj.width;
+        if (obj.x < 0) {
+            obj.vx = 0 - obj.vx;
         }
         else if (obj.x > canvasWidth - obj.width) {
-            obj.vx = -Math.abs(obj.vx) * restitution;
-            obj.x = canvasWidth - obj.width;
+            obj.vx = 0 - obj.vx;
         }
         // Check for bottom and top
-        if (obj.y < obj.height) {
-            obj.vy = Math.abs(obj.vy) * restitution;
-            obj.y = obj.height;
+        if (obj.y < 0) {
+            obj.vy = 0 - obj.vy;
         }
         else if (obj.y > canvasHeight - obj.height) {
-            obj.vy = -Math.abs(obj.vy) * restitution;
-            obj.y = canvasHeight - obj.height;
+            obj.vy = 0 - obj.vy;
+            // obj.y = canvasHeight - obj.height;
         }
     }
 }
