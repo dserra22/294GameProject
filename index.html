@@ -14,5 +14,11 @@
     <canvas class="canvas"></canvas>
     <button class="start-game">Get big <span>again</span></button>
     <h1 class="steak-subtitle">AVOID&nbsp;TOFU&nbsp;AT&nbsp;ALL&nbsp;COSTS.</h1>
+
+    <script defer>
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.register("./sw.js");
+      }
+    </script>
   </body>
 </html>

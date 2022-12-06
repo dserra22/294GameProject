@@ -1,0 +1,17 @@
+{
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "name": "Eat your Steak",
+  "short_name": "EYS",
+  "description": "Eat your steak",
+  "display": "standalone",
+  "start_url": "/?utm_source=homescreen",
+  "lang": "en-US",
+  "icons": [
+    {
+      "src": "./david.jpg",
+      "sizes": "512x512",
+      "type": "image/jpg"
+    }
+  ]
+}
