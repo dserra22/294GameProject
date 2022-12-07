@@ -71,7 +71,9 @@ self.addEventListener("fetch", function (e) {
               console.log("[ServiceWorker] No response from fetch ");
               return response;
             }
+            if (!(e.request.url.indexOf("http") === 0)) return; // skip the request. if request is not made with http protocol
 
+            // lol
             var responseClone = response.clone();
 
             //  Open the cache
