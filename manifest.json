@@ -11,7 +11,7 @@
     {
       "src": "./david.png",
       "sizes": "512x512",
-      "type": "image/jpg"
+      "type": "image/png"
     }
   ]
 }
