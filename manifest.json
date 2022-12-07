@@ -9,7 +9,7 @@
   "lang": "en-US",
   "icons": [
     {
-      "src": "./david.jpg",
+      "src": "./david.png",
       "sizes": "512x512",
       "type": "image/jpg"
     }
