@@ -429,6 +429,7 @@ function rectIntersect(
   return true;
 }
 
+// this is from the tutorial
 function detectCollisions() {
   let obj1: Square;
   let obj2: Square;
